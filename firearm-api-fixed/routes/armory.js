@@ -1,7 +1,9 @@
 // routes/armory.js
 const express = require("express");
+const mongoose = require("mongoose");
 const router = express.Router();
 const UserFirearm = require("../models/UserFirearm");
+const firearmsDb = require('../utils/firearmsDb');
 
 // ✅ 获取某用户的一支枪的完整信息
 router.get("/users/:uid/armory/:armoryId", async (req, res) => {
@@ -51,6 +53,45 @@ router.get("/armory/:armoryId/notes", async (req, res) => {
     } catch (err) {
       res.status(500).json({ error: err.message });
     }
+  });  
+
+  const collections = [
+    "AR Parts", "Ammo", "Cleanning Supplies", "Gear", "HOLSTERS_AND_HOLDERS",
+    "HUNTING_GEAR", "Handguns", "KNIVES_AND_TOOLS", "MAGAZINES", "OPTICS",
+    "Pistol", "RANGE_GEAR", "RIFLES", "SHOTGUNS", "SILENCERS", "SILENCER_ACCESSORIES"
+  ];
+  
+  // 📌 GET /armory/:armoryId/videos?type=guide
+  router.get('/:armoryId/videos', async (req, res) => {
+    const { armoryId } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(armoryId)) {
+      return res.status(400).json({ error: "Invalid firearm ID" });
+    }
+  
+    const objectId = new mongoose.Types.ObjectId(armoryId);
+  
+    for (const collectionName of collections) {
+      try {
+        const schema = new mongoose.Schema({}, { strict: false });
+        const modelName = collectionName.replace(/ /g, "_");
+        const Model = firearmsDb.model(modelName, schema, collectionName);
+        const item = await Model.findById(objectId);
+        if (item && item.video_list && item.video_list.length > 0) {
+          return res.json({
+            total: item.video_list.length,
+            videos: item.video_list.map(v => ({
+              title: v.title,
+              link: v.link,
+              providerVideoId: v.providerVideoId
+            }))
+          });
+        }
+      } catch (err) {
+        console.error(`Error searching in ${collectionName}:`, err.message);
+      }
+    }
+  
+    return res.status(404).json({ error: "Firearm or videos not found" });
   });  
 
 module.exports = router;
