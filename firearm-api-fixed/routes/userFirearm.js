@@ -17,10 +17,7 @@ router.get('/', async (req, res) => {
 router.get('/reminders', async (req, res) => {
   const { userId } = req.query;
   const leadDays = parseInt(req.query.days || '7');
-
-  if (!userId) {
-    return res.status(400).json({ error: 'Missing userId' });
-  }
+  if (!userId) return res.status(400).json({ error: 'Missing userId' });
 
   try {
     const today = new Date();
@@ -29,7 +26,7 @@ router.get('/reminders', async (req, res) => {
     threshold.setDate(today.getDate() + leadDays);
 
     const records = await UserFirearm.find({
-      userId: userId,
+      userId,
       nextMaintenance: { $gte: today, $lte: threshold }
     });
 
@@ -43,7 +40,7 @@ router.get('/reminders', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const item = await UserFirearm.findById(req.params.id);
-    if (!item) return res.status(404).json({ error: "Not found" });
+    if (!item) return res.status(404).json({ error: 'Not found' });
     res.json(item);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -59,7 +56,6 @@ router.post('/', async (req, res) => {
       next.setDate(next.getDate() + parseInt(body.maintenanceIntervalDays));
       body.nextMaintenance = next;
     }
-
     const newItem = new UserFirearm(body);
     const saved = await newItem.save();
     res.status(201).json(saved);
@@ -90,14 +86,29 @@ router.delete('/:id', async (req, res) => {
   }
 });
 
-// 📌 添加 accessory / ammo / maintenance
+// 📌 添加 accessory / ammo / maintenance / notes
 router.post('/:id/:arrayField', async (req, res) => {
   const { id, arrayField } = req.params;
-  const record = req.body;
+  let record = req.body;
 
-  const validFields = ['accessories', 'ammoRecords', 'maintenanceRecords'];
+  const validFields = ['accessories', 'ammoRecords', 'maintenanceRecords', 'notes'];
+  const idFields = {
+    accessories: 'accessoryId',
+    ammoRecords: 'ammoId',
+    maintenanceRecords: 'maintenanceId',
+    notes: 'noteId'
+  };
+
   if (!validFields.includes(arrayField)) {
     return res.status(400).json({ error: 'Invalid array field' });
+  }
+
+  // 自动生成 ID（各类都需要）
+  record[idFields[arrayField]] = uuidv4();
+
+  // notes 需要补日期
+  if (arrayField === 'notes' && !record.date) {
+    record.date = new Date();
   }
 
   try {
@@ -113,7 +124,7 @@ router.post('/:id/:arrayField', async (req, res) => {
   }
 });
 
-// 📌 修改 accessory / ammo / maintenance
+// 📌 修改 accessory / ammo / maintenance / notes
 router.patch('/:id/:arrayField/:recordId', async (req, res) => {
   const { id, arrayField, recordId } = req.params;
   const updates = req.body;
@@ -121,7 +132,8 @@ router.patch('/:id/:arrayField/:recordId', async (req, res) => {
   const validFields = {
     accessories: 'accessoryId',
     ammoRecords: 'ammoId',
-    maintenanceRecords: 'maintenanceId'
+    maintenanceRecords: 'maintenanceId',
+    notes: 'noteId'
   };
 
   const idField = validFields[arrayField];
@@ -144,14 +156,15 @@ router.patch('/:id/:arrayField/:recordId', async (req, res) => {
   }
 });
 
-// 📌 删除 accessory / ammo / maintenance
+// 📌 删除 accessory / ammo / maintenance / notes
 router.delete('/:id/:arrayField/:recordId', async (req, res) => {
   const { id, arrayField, recordId } = req.params;
 
   const validFields = {
     accessories: 'accessoryId',
     ammoRecords: 'ammoId',
-    maintenanceRecords: 'maintenanceId'
+    maintenanceRecords: 'maintenanceId',
+    notes: 'noteId'
   };
 
   const idField = validFields[arrayField];
@@ -170,25 +183,31 @@ router.delete('/:id/:arrayField/:recordId', async (req, res) => {
   }
 });
 
-
-// 📌 📓 NOTE APIs: 增删改查
+// 📌 获取某支枪的所有笔记
 router.get('/:id/notes', async (req, res) => {
   try {
     const firearm = await UserFirearm.findById(req.params.id);
-    if (!firearm) return res.status(404).json({ error: 'Not found' });
-    res.json(firearm.notes || []);
+    if (!firearm) return res.status(404).json({ error: 'Firearm not found' });
+
+    res.json({
+      count: firearm.notes.length,
+      data: firearm.notes
+    });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
+// 📌 添加单条笔记（包含 title、content、date）
 router.post('/:id/notes', async (req, res) => {
   try {
-    const { note } = req.body;
+    const { title, content, date } = req.body;
+
     const newNote = {
-      id: uuidv4(),
-      date: new Date(),
-      note
+      noteId: uuidv4(),
+      title: title || '',
+      content: content || '',
+      date: date ? new Date(date) : new Date()
     };
 
     const updated = await UserFirearm.findByIdAndUpdate(
@@ -197,40 +216,44 @@ router.post('/:id/notes', async (req, res) => {
       { new: true }
     );
 
-    res.json(updated.notes);
+    if (!updated) return res.status(404).json({ error: 'Firearm not found' });
+
+    res.status(201).json(newNote);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
 
-router.put('/:id/notes/:noteId', async (req, res) => {
-  try {
-    const { note } = req.body;
-    const firearm = await UserFirearm.findById(req.params.id);
-    if (!firearm) return res.status(404).json({ error: 'Not found' });
-
-    const index = firearm.notes.findIndex(n => n.id === req.params.noteId);
-    if (index === -1) return res.status(404).json({ error: 'Note not found' });
-
-    firearm.notes[index].note = note;
-    await firearm.save();
-
-    res.json(firearm.notes);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-router.delete('/:id/notes/:noteId', async (req, res) => {
+// 📌 清空某支枪的所有笔记
+router.delete('/:id/notes', async (req, res) => {
   try {
     const updated = await UserFirearm.findByIdAndUpdate(
       req.params.id,
-      { $pull: { notes: { id: req.params.noteId } } },
+      { $set: { notes: [] } },
+      { new: true }
+    );
+    if (!updated) return res.status(404).json({ error: 'Firearm not found' });
+
+    res.json({ message: 'All notes cleared', firearmId: req.params.id });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 📌 删除某条笔记（通过 noteId）
+router.delete('/:id/notes/:noteId', async (req, res) => {
+  try {
+    const { id, noteId } = req.params;
+
+    const updated = await UserFirearm.findByIdAndUpdate(
+      id,
+      { $pull: { notes: { noteId } } },
       { new: true }
     );
 
-    if (!updated) return res.status(404).json({ error: 'Not found' });
-    res.json(updated.notes);
+    if (!updated) return res.status(404).json({ error: 'Firearm not found or note not found' });
+
+    res.json({ message: 'Note deleted', noteId });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

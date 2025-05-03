@@ -1,5 +1,13 @@
+// models/UserFirearm.js
 const mongoose = require("mongoose");
 const userDb = require("../utils/userDb");
+
+const NoteSubSchema = new mongoose.Schema({
+  noteId: { type: String, required: true },
+  title: { type: String },
+  content: { type: String },
+  date: { type: Date, default: Date.now }
+}, { _id: true }); // 让每条笔记也保留一个 MongoDB 自带的 _id
 
 const UserFirearmSchema = new mongoose.Schema({
   userId: String,
@@ -13,13 +21,7 @@ const UserFirearmSchema = new mongoose.Schema({
   lastMaintenance: Date,
   maintenanceIntervalDays: Number,
   nextMaintenance: Date,
-  notes: [
-    {
-      id: String,
-      date: Date,
-      note: String
-    }
-  ]
+  notes: [NoteSubSchema] // ✅ 替换为新的结构
 }, {
   collection: "User_Firearm"
 });

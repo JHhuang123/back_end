@@ -140,10 +140,14 @@ app.get("/firearm-details/:id", async (req, res) => {
 const userRoutes = require("./routes/users");
 const userFirearmRoutes = require("./routes/userFirearm");
 const firearmRoutes = require("./routes/firearms");
+const armoryRoutes = require("./routes/armory");
+const noteRoutes = require('./routes/note');
 
 app.use("/api/users", userRoutes);
 app.use("/api/user_firearm", userFirearmRoutes);
 app.use("/api/firearms", firearmRoutes);
+app.use('/api/armory', armoryRoutes);
+app.use('/note', noteRoutes);
 
 // ✅ JSON 导出接口
 app.get("/export/:collection", async (req, res) => {
