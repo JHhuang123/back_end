@@ -1,21 +1,20 @@
-const express = require('express');
+const express = require("express");
 const router = express.Router();
-const userController = require('../controllers/userController');
+const userController = require("../controllers/userController");
 
 // 创建用户
-router.post('/', userController.createUser);
+router.post("/", userController.createUser);
 
 // 获取所有用户
-router.get('/', userController.getAllUsers);
+router.get("/", userController.getAllUsers);
 
-// 获取指定用户
-router.get('/:id', userController.getUserById);
+// 获取单个用户
+router.get("/:id", userController.getUserById);
+
+// 更新用户
+router.put("/:id", userController.updateUser);
 
 // 删除用户
-router.delete('/:id', userController.deleteUser);
+router.delete("/:id", userController.deleteUser);
 
-// 📌 更新用户信息
-router.put('/:id', userController.updateUser);
-
-
-module.exports = router;  // ← 这行必须有
+module.exports = router;

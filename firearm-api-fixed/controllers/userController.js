@@ -1,5 +1,25 @@
-// controllers/userController.js
-const User = require('../models/User');
+const User = require("../models/User");
+
+// 获取所有用户
+exports.getAllUsers = async (req, res) => {
+  try {
+    const users = await User.find();
+    res.json({ total: users.length, data: users });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// 获取单个用户
+exports.getUserById = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) return res.status(404).json({ error: "User not found" });
+    res.json(user);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
 
 // 创建用户
 exports.createUser = async (req, res) => {
@@ -12,48 +32,23 @@ exports.createUser = async (req, res) => {
   }
 };
 
-// 获取所有用户
-exports.getAllUsers = async (req, res) => {
-  try {
-    const users = await User.find();
-    res.json({ total: users.length, data: users });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
-
-// 获取指定用户
-exports.getUserById = async (req, res) => {
-  try {
-    const user = await User.findById(req.params.id);
-    if (!user) return res.status(404).json({ error: 'User not found' });
-    res.json(user);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-};
-
-// 删除指定用户
+// 删除用户
 exports.deleteUser = async (req, res) => {
   try {
     const deleted = await User.findByIdAndDelete(req.params.id);
-    if (!deleted) return res.status(404).json({ error: 'User not found' });
-    res.json({ message: 'Deleted successfully' });
+    if (!deleted) return res.status(404).json({ error: "User not found" });
+    res.json({ message: "Deleted successfully" });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
 };
 
-// ✅ 更新用户信息（PUT）
+// 更新用户信息
 exports.updateUser = async (req, res) => {
   try {
-    const updatedUser = await req.userDatabase
-      .model("User")
-      .findByIdAndUpdate(req.params.id, req.body, { new: true });
-
-    if (!updatedUser) return res.status(404).json({ error: "找不到该用户" });
-
-    res.json(updatedUser);
+    const updated = await User.findByIdAndUpdate(req.params.id, req.body, { new: true });
+    if (!updated) return res.status(404).json({ error: "User not found" });
+    res.json(updated);
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
