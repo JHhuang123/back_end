@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const userDb = require('../utils/userDb');
 
 const userSchema = new mongoose.Schema({
   userId: { type: String, required: true, unique: true },
@@ -13,6 +14,8 @@ const userSchema = new mongoose.Schema({
   newsPreference: { type: Object, default: {} },
   maintenance: { type: [Object], default: [] },
   notes: { type: [Object], default: [] }
+}, {
+  collection: 'users' // 确保与你 MongoDB Atlas 集合一致
 });
 
-module.exports = mongoose.model("User", userSchema);
+module.exports = userDb.model('User', userSchema);
