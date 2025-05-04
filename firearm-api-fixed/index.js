@@ -148,6 +148,7 @@ app.use("/api/user_firearm", userFirearmRoutes);
 app.use("/api/firearms", firearmRoutes);
 app.use('/api/armory', armoryRoutes);
 app.use('/note', noteRoutes);
+app.use("/uploads", express.static("uploads"));
 
 // ✅ JSON 导出接口
 app.get("/export/:collection", async (req, res) => {
