@@ -39,60 +39,77 @@
 
 ## ❌ 待开发功能
 
-### 👤 用户信息管理
-- `GET /users/{uid}/profile`：查看用户资料  
-- `PUT /users/{uid}/profile`：编辑用户资料  
-- `POST /users/{uid}/avatar`：上传用户头像
+### 👤 用户资料与偏好
+- `GET /users/{uid}/profile`、`PUT`：查看与编辑资料
+- `POST /users/{uid}/avatar`：上传头像
+- `GET /users/{uid}/settings` / `PUT`：查看/修改应用偏好（语言、主题、隐私、通知）
 
-### ❤️ 收藏/喜好功能
-- `GET /users/{uid}/favorites`：获取收藏列表  
-- `POST /users/{uid}/favorites`：添加收藏  
-- `DELETE /users/{uid}/favorites/{itemId}`：取消收藏
+### ❤️ 收藏与喜好
+- 收藏增删查：`GET/POST/DELETE /users/{uid}/favorites`
+- 支持收藏产品、帖子
 
-### ✳️ 推荐系统（问卷推荐枪支）
-- `POST /recommendation`：提交问卷，返回推荐枪支
+### ✳️ 枪支推荐系统（问卷推荐）
+- `POST /recommendation`：提交问卷、返回推荐枪支列表
 
-### 🔎 搜索模块
-- `GET /search/items?keyword=xxx&page=1&limit=20`：关键词搜索  
-- `GET /search/suggestions?q=xxx`：搜索联想词（品牌/型号）  
-- `POST /search/advanced`：多条件筛选  
-- `GET /users/{uid}/searches`：获取用户历史搜索记录
+### 🔎 搜索系统
+- 关键词搜索：`GET /search/items`
+- 搜索建议：`GET /search/suggestions`
+- 高级筛选：`POST /search/advanced`
+- 搜索记录：`GET /users/{uid}/searches`
 
-### 🎯 产品详情页拓展
-- `GET /products/{productId}`：产品详情  
-- `GET /products/{id}/videos`：产品视频  
-- `GET /products/{id}/compliance?state=CA`：合规信息  
-- `GET /products/{id}/related`：相关推荐  
-- `GET /products/{id}/safetyRules`：安全规则  
-- `GET /products/{id}/reviews?page=1`：用户评价
+### 🎯 产品详情拓展
+- `GET /products/{id}`：详情
+- `GET /products/{id}/videos`、`/compliance`、`/related`、`/safetyRules`、`/reviews`
 
-### 🔁 枪支比较功能
-- `GET /firearms/compare?ids=id1,id2`：对比枪支参数
+### 🔁 枪支比较
+- `GET /firearms/compare?ids=id1,id2,...`：返回对比数据结构
 
-### 🧠 AI Coach 聊天机器人
-- `GET /ai/conversations?userId={uid}`：获取会话历史  
-- `POST /ai/conversations`：创建新会话  
-- `POST /ai/conversations/{convId}/messages`：发送消息  
-- `GET /ai/conversations/{convId}/stream?userId={uid}`：流式响应（用于实时聊天）
+### 🧠 AI 教练模块
+- 会话管理：`GET/POST /ai/conversations`
+- 发送消息：`POST /ai/conversations/{convId}/messages`
+- 聊天流：`GET /ai/conversations/{convId}/stream`
 
-### 📋 推荐问答模块
-- `GET /questions/trending`：获取热门问题  
-- `POST /questions`：用户提问
+### 📋 问答推荐模块
+- 热门问题：`GET /questions/trending`
+- 提问：`POST /questions`
 
-### 🗺️ 地图功能（待集成 Google Maps）
-- `GET /dealers`：附近经销商  
-- `GET /ranges`：附近靶场  
-- `GET /hunting/areas`：附近狩猎区域
+### 🌐 地图功能（地图 & 附近设施）
+- `GET /dealers`：附近经销商
+- `GET /ranges`：靶场
+- `GET /hunting/areas`：猎区
 
----
+### 🏛️ 社区模块
+- 帖子增删改查：`/community/posts`
+- 评论：`/community/posts/{id}/comments`
+- 点赞：`/community/posts/{id}/like`
+- 举报：`POST /reports`
 
-## 🛠 技术栈
-- Node.js / Express.js
-- MongoDB Atlas
-- Mongoose ODM
-- Multer（头像、图片上传）
-- Google Maps API（地理定位功能，待集成）
-- Gemini AI / GPT（AI Coach 功能，待集成）
+### 🔔 通知模块
+- 获取：`GET /users/{uid}/notifications`
+- 标为已读：`POST /users/{uid}/notifications/mark-read`
+
+### 🧾 用户成就与等级
+- 射击/打猎统计：`GET /users/{uid}/stats`
+- 成就勋章：`GET /users/{uid}/achievements`
+- 等级/经验：`GET /users/{uid}/level`
+
+### 🎮 AR / 3D 模型模块
+- 模型列表：`GET /ar/models?category=handgun&page=1`
+- 模型详情：`GET /ar/models/{modelId}`（含 downloadUrl）
+
+### ⚙️ 系统设置与版本控制
+- 应用配置：`GET /app/config`
+- 版本更新检查：`GET /app/version`
+
+### 🔐 用户认证模块
+- 登录/登出：`POST /auth/login`, `/auth/logout`
+- 注册：`POST /auth/register`
+- OAuth 登录：Google / Apple / Facebook
+- 密码重置与修改：`/auth/password-reset-request`, `/auth/change-password`, `/auth/refresh`
+
+### 📣 用户反馈与举报
+- 意见反馈：`POST /feedback`
+- 内容举报：`POST /reports`
 
 ---
 
@@ -102,4 +119,3 @@
 PORT=3000
 MONGODB_URI_FIREARMS=mongodb+srv://jiahua:iChdH6qu97SC8bQn@xrings.syuol.mongodb.net/Firearms
 MONGODB_URI_USERDATABASE=mongodb+srv://jiahua:iChdH6qu97SC8bQn@xrings.syuol.mongodb.net/userDatabase
-```
