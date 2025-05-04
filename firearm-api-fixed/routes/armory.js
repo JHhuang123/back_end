@@ -61,7 +61,7 @@ router.get("/armory/:armoryId/notes", async (req, res) => {
     "Pistol", "RANGE_GEAR", "RIFLES", "SHOTGUNS", "SILENCERS", "SILENCER_ACCESSORIES"
   ];
   
-  // 📌 GET /armory/:armoryId/videos?type=guide
+  // 📌 GET /armory/:armoryId/videos?type=guide视频
   router.get('/:armoryId/videos', async (req, res) => {
     const { armoryId } = req.params;
     if (!mongoose.Types.ObjectId.isValid(armoryId)) {
@@ -92,6 +92,131 @@ router.get("/armory/:armoryId/notes", async (req, res) => {
     }
   
     return res.status(404).json({ error: "Firearm or videos not found" });
+  });  
+
+  router.post("/users/:uid/armory", async (req, res) => {
+    const { uid } = req.params;
+    const { productId } = req.body;
+    if (!productId) return res.status(400).json({ error: "Missing productId" });
+  
+    try {
+      const collections = [
+        "AR Parts", "Ammo", "Cleanning Supplies", "Gear", "HOLSTERS_AND_HOLDERS",
+        "HUNTING_GEAR", "Handguns", "KNIVES_AND_TOOLS", "MAGAZINES", "OPTICS",
+        "Pistol", "RANGE_GEAR", "RIFLES", "SHOTGUNS", "SILENCERS", "SILENCER_ACCESSORIES"
+      ];
+  
+      let foundItem = null;
+      let sourceCollection = null;
+      const mongoose = require("mongoose");
+  
+      for (const name of collections) {
+        const schema = new mongoose.Schema({}, { strict: false });
+        const Model = require('../utils/firearmsDb').model(name.replace(/ /g, "_"), schema, name);
+        foundItem = await Model.findById(productId);
+        if (foundItem) {
+          sourceCollection = name;
+          break;
+        }
+      }
+  
+      if (!foundItem) {
+        return res.status(404).json({ error: "Firearm not found in any collection" });
+      }
+  
+      const UserFirearm = require("../models/UserFirearm");
+      const newEntry = new UserFirearm({
+        userId: uid,
+        firearmId: foundItem._id,
+        customName: foundItem.name,
+        purchaseDate: new Date(),
+        purchasePrice: foundItem.price || 0,
+        accessories: [],
+        maintenanceRecords: [],
+        ammoRecords: [],
+        lastMaintenance: null,
+        maintenanceIntervalDays: null,
+        nextMaintenance: null,
+        notes: []
+      });
+  
+      const saved = await newEntry.save();
+  
+      res.status(201).json({ success: true, armoryItem: saved });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // 📌 删除某用户的一支枪
+router.delete("/users/:uid/armory/:armoryId", async (req, res) => {
+    const { uid, armoryId } = req.params;
+    try {
+      const deleted = await UserFirearm.findOneAndDelete({
+        _id: armoryId,
+        userId: uid
+      });
+  
+      if (!deleted) {
+        return res.status(404).json({ error: "User firearm not found" });
+      }
+  
+      res.json({ message: "Firearm deleted successfully" });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });  
+
+  // 📌 编辑某用户的一支枪
+router.put("/users/:uid/armory/:armoryId", async (req, res) => {
+    const { uid, armoryId } = req.params;
+    const updates = req.body;
+  
+    try {
+      const updated = await UserFirearm.findOneAndUpdate(
+        { _id: armoryId, userId: uid },
+        updates,
+        { new: true }
+      );
+  
+      if (!updated) {
+        return res.status(404).json({ error: "User firearm not found" });
+      }
+  
+      res.json({ message: "Firearm updated", data: updated });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
+  });  
+
+  // ✅ 为某支枪新增一个配件
+router.post("/:id/accessories", async (req, res) => {
+    const { id } = req.params;
+    const { accessoryId, customName, purchaseDate, purchasePrice } = req.body;
+  
+    if (!accessoryId || !customName || !purchaseDate || purchasePrice === undefined) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+  
+    const newAccessory = {
+      accessoryId,
+      customName,
+      purchaseDate,
+      purchasePrice
+    };
+  
+    try {
+      const updated = await UserFirearm.findByIdAndUpdate(
+        id,
+        { $push: { accessories: newAccessory } },
+        { new: true }
+      );
+      if (!updated) return res.status(404).json({ error: "User firearm not found" });
+  
+      res.status(201).json({ message: "Accessory added", accessory: newAccessory });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
+    }
   });  
 
 module.exports = router;
