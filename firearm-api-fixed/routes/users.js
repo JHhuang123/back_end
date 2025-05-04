@@ -34,4 +34,9 @@ router.put("/:id/avatar-url", userController.setAvatarUrl);
 router.get("/:id/settings", userController.getUserSettings);
 router.put("/:id/settings", userController.updateUserSettings);
 
+// 收藏功能
+router.get("/:id/favorites", userController.getFavorites);
+router.post("/:id/favorites", userController.addFavorite);
+router.delete("/:id/favorites/:itemId", userController.removeFavorite);
+
 module.exports = router;

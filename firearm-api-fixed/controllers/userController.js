@@ -55,16 +55,15 @@ exports.updateUser = async (req, res) => {
   }
 };
 
-// ✅ 获取用户资料（兼容字段名，完整返回）
+// 获取用户资料
 exports.getUserProfile = async (req, res) => {
   try {
     const user = await User.findOne({ userId: req.params.id });
-
     if (!user) return res.status(404).json({ message: "User not found." });
 
     res.json({
       userId: user.userId,
-      username: user.userName || user.username || "",  // ← 自动兼容
+      username: user.userName || user.username || "",
       email: user.email || "",
       bio: user.bio || "",
       avatarUrl: user.avatarUrl || "",
@@ -75,11 +74,10 @@ exports.getUserProfile = async (req, res) => {
   }
 };
 
-// 编辑用户资料（推荐版）
+// 编辑用户资料
 exports.updateUserProfile = async (req, res) => {
   try {
     const { username, email, bio } = req.body;
-
     const updatePayload = {};
     if (username !== undefined) updatePayload.userName = username;
     if (email !== undefined) updatePayload.email = email;
@@ -95,7 +93,7 @@ exports.updateUserProfile = async (req, res) => {
 
     res.json({
       userId: updatedUser.userId,
-      username: updatedUser.userName || updatedUser.username || "",  // ← 修复这里
+      username: updatedUser.userName || updatedUser.username || "",
       email: updatedUser.email || "",
       bio: updatedUser.bio || "",
       avatarUrl: updatedUser.avatarUrl || ""
@@ -110,16 +108,13 @@ exports.uploadAvatar = async (req, res) => {
   try {
     const filename = req.file.filename;
     const avatarUrl = `/uploads/avatars/${filename}`;
-
     const updated = await User.findOneAndUpdate(
       { userId: req.params.id },
       { avatarUrl },
       { new: true }
     );
 
-    if (!updated) {
-      return res.status(404).json({ message: "User not found." });
-    }
+    if (!updated) return res.status(404).json({ message: "User not found." });
 
     res.json({ avatarUrl });
   } catch (err) {
@@ -127,10 +122,9 @@ exports.uploadAvatar = async (req, res) => {
   }
 };
 
-// 设置头像链接（外链）
+// 设置头像链接
 exports.setAvatarUrl = async (req, res) => {
   const { avatarUrl } = req.body;
-
   if (!avatarUrl || typeof avatarUrl !== "string") {
     return res.status(400).json({ error: "avatarUrl is required and must be a string." });
   }
@@ -141,16 +135,9 @@ exports.setAvatarUrl = async (req, res) => {
       { avatarUrl },
       { new: true }
     );
-
-    if (!updatedUser) {
-      return res.status(404).json({ message: "User not found." });
-    }
-
-    return res.json({
-      avatarUrl: updatedUser.avatarUrl
-    }); // ✅ 确保返回的 JSON 有内容
+    if (!updatedUser) return res.status(404).json({ message: "User not found." });
+    res.json({ avatarUrl: updatedUser.avatarUrl });
   } catch (err) {
-    console.error("Error updating avatar URL:", err);
     res.status(500).json({ error: "Failed to update avatar URL." });
   }
 };
@@ -160,7 +147,6 @@ exports.getUserSettings = async (req, res) => {
   try {
     const user = await User.findOne({ userId: req.params.id }).select("settings");
     if (!user) return res.status(404).json({ error: "User not found" });
-
     res.json(user.settings || {});
   } catch (err) {
     res.status(500).json({ error: "Failed to retrieve settings" });
@@ -170,18 +156,72 @@ exports.getUserSettings = async (req, res) => {
 // 更新偏好设置
 exports.updateUserSettings = async (req, res) => {
   const settings = req.body;
-
   try {
     const updated = await User.findOneAndUpdate(
       { userId: req.params.id },
       { settings },
       { new: true, runValidators: true }
     );
-
     if (!updated) return res.status(404).json({ error: "User not found" });
-
     res.json(updated.settings);
   } catch (err) {
     res.status(500).json({ error: "Failed to update settings" });
+  }
+};
+
+// 获取收藏列表
+exports.getFavorites = async (req, res) => {
+  try {
+    const user = await User.findOne({ userId: req.params.id });
+    if (!user) return res.status(404).json({ error: "User not found" });
+    res.json({ favorites: user.favorites || [] });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch favorites" });
+  }
+};
+
+// 添加收藏项
+exports.addFavorite = async (req, res) => {
+  const userId = req.params.id;
+  const { type, targetId, title } = req.body;
+
+  if (!type || !targetId) {
+    return res.status(400).json({ error: "type and targetId are required." });
+  }
+
+  try {
+    const user = await User.findOne({ userId });
+    if (!user) return res.status(404).json({ error: "User not found." });
+
+    const alreadyExists = user.favorites.some(
+      fav => fav.type === type && fav.targetId === targetId
+    );
+
+    if (!alreadyExists) {
+      user.favorites.push({ type, targetId, title });
+      await user.save();
+    }
+
+    res.json({ favorites: user.favorites });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to add favorite.", details: err.message });
+  }
+};
+
+// 删除收藏项
+exports.removeFavorite = async (req, res) => {
+  const { id: userId, itemId } = req.params;
+
+  try {
+    const user = await User.findOneAndUpdate(
+      { userId },
+      { $pull: { favorites: { _id: itemId } } },
+      { new: true }
+    );
+
+    if (!user) return res.status(404).json({ error: "User not found" });
+    res.json({ favorites: user.favorites });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to remove favorite", details: err.message });
   }
 };
