@@ -1,3 +1,4 @@
+// ✅ routes/users.js
 const express = require("express");
 const router = express.Router();
 const userController = require("../controllers/userController");
@@ -38,5 +39,12 @@ router.put("/:id/settings", userController.updateUserSettings);
 router.get("/:id/favorites", userController.getFavorites);
 router.post("/:id/favorites", userController.addFavorite);
 router.delete("/:id/favorites/:itemId", userController.removeFavorite);
+
+// 收藏夹模块（新增 ✅）
+router.get("/:id/favorite-folders", userController.getAllFolders);
+router.post("/:id/favorite-folders", userController.createFavoriteFolder);
+router.post("/:id/favorite-folders/:folderName", userController.addItemToFavoriteFolder);
+router.delete("/:id/favorite-folders/:folderName/:itemId", userController.removeItemFromFavoriteFolder);
+router.delete("/:id/favorite-folders/:folderName", userController.deleteFavoriteFolder);
 
 module.exports = router;

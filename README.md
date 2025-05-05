@@ -43,14 +43,14 @@
 - `GET /api/users/:id/settings`：查看用户偏好设置，如语言、主题、隐私配置
 - `PUT /api/users/:id/settings`：更新并保存用户偏好设置
 
+### ❤️ 收藏与喜好
+- 收藏增删查：`GET/POST/DELETE /users/{uid}/favorites`
+- 支持收藏产品、帖子，并持久化到用户收藏列表中
+
 ---
 
 ## ❌ 待开发功能
 
-
-### ❤️ 收藏与喜好
-- 收藏增删查：`GET/POST/DELETE /users/{uid}/favorites`
-- 支持收藏产品、帖子
 
 ### ✳️ 枪支推荐系统（问卷推荐）
 - `POST /recommendation`：提交问卷、返回推荐枪支列表

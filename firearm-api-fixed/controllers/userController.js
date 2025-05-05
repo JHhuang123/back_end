@@ -1,7 +1,8 @@
+// controllers/userController.js
 const User = require("../models/User");
 const path = require("path");
 
-// 获取所有用户
+// --- 用户管理 ---
 exports.getAllUsers = async (req, res) => {
   try {
     const users = await User.find();
@@ -11,7 +12,6 @@ exports.getAllUsers = async (req, res) => {
   }
 };
 
-// 获取单个用户
 exports.getUserById = async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
@@ -22,7 +22,6 @@ exports.getUserById = async (req, res) => {
   }
 };
 
-// 创建用户
 exports.createUser = async (req, res) => {
   try {
     const newUser = new User(req.body);
@@ -33,7 +32,6 @@ exports.createUser = async (req, res) => {
   }
 };
 
-// 删除用户
 exports.deleteUser = async (req, res) => {
   try {
     const deleted = await User.findByIdAndDelete(req.params.id);
@@ -44,7 +42,6 @@ exports.deleteUser = async (req, res) => {
   }
 };
 
-// 更新用户信息
 exports.updateUser = async (req, res) => {
   try {
     const updated = await User.findByIdAndUpdate(req.params.id, req.body, { new: true });
@@ -55,7 +52,7 @@ exports.updateUser = async (req, res) => {
   }
 };
 
-// 获取用户资料
+// --- 用户资料 ---
 exports.getUserProfile = async (req, res) => {
   try {
     const user = await User.findOne({ userId: req.params.id });
@@ -74,7 +71,6 @@ exports.getUserProfile = async (req, res) => {
   }
 };
 
-// 编辑用户资料
 exports.updateUserProfile = async (req, res) => {
   try {
     const { username, email, bio } = req.body;
@@ -103,7 +99,7 @@ exports.updateUserProfile = async (req, res) => {
   }
 };
 
-// 上传头像（本地上传）
+// --- 头像上传 ---
 exports.uploadAvatar = async (req, res) => {
   try {
     const filename = req.file.filename;
@@ -122,7 +118,6 @@ exports.uploadAvatar = async (req, res) => {
   }
 };
 
-// 设置头像链接
 exports.setAvatarUrl = async (req, res) => {
   const { avatarUrl } = req.body;
   if (!avatarUrl || typeof avatarUrl !== "string") {
@@ -142,7 +137,7 @@ exports.setAvatarUrl = async (req, res) => {
   }
 };
 
-// 获取偏好设置
+// --- 偏好设置 ---
 exports.getUserSettings = async (req, res) => {
   try {
     const user = await User.findOne({ userId: req.params.id }).select("settings");
@@ -153,7 +148,6 @@ exports.getUserSettings = async (req, res) => {
   }
 };
 
-// 更新偏好设置
 exports.updateUserSettings = async (req, res) => {
   const settings = req.body;
   try {
@@ -169,7 +163,7 @@ exports.updateUserSettings = async (req, res) => {
   }
 };
 
-// 获取收藏列表
+// --- 收藏 ---
 exports.getFavorites = async (req, res) => {
   try {
     const user = await User.findOne({ userId: req.params.id });
@@ -180,7 +174,6 @@ exports.getFavorites = async (req, res) => {
   }
 };
 
-// 添加收藏项
 exports.addFavorite = async (req, res) => {
   const userId = req.params.id;
   const { type, targetId, title } = req.body;
@@ -208,7 +201,6 @@ exports.addFavorite = async (req, res) => {
   }
 };
 
-// 删除收藏项
 exports.removeFavorite = async (req, res) => {
   const { id: userId, itemId } = req.params;
 
@@ -223,5 +215,98 @@ exports.removeFavorite = async (req, res) => {
     res.json({ favorites: user.favorites });
   } catch (err) {
     res.status(500).json({ error: "Failed to remove favorite", details: err.message });
+  }
+};
+
+// --- 收藏夹逻辑（使用数组） ---
+exports.createFavoriteFolder = async (req, res) => {
+  const userId = req.params.id;
+  const { name } = req.body;
+
+  if (!name) return res.status(400).json({ error: "Folder name is required." });
+
+  try {
+    const user = await User.findOne({ userId });
+    if (!user) return res.status(404).json({ error: "User not found." });
+
+    const exists = user.favoriteFolders.find(f => f.name === name);
+    if (exists) {
+      return res.status(400).json({ error: "Folder already exists." });
+    }
+
+    user.favoriteFolders.push({ name, items: [] });
+    await user.save();
+
+    res.status(201).json({ message: "Folder created.", favoriteFolders: user.favoriteFolders });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to create folder.", details: err.message });
+  }
+};
+
+exports.getAllFolders = async (req, res) => {
+  try {
+    const user = await User.findOne({ userId: req.params.id });
+    if (!user) return res.status(404).json({ error: "User not found" });
+    res.json({ favoriteFolders: user.favoriteFolders || [] });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch folders", details: err.message });
+  }
+};
+
+exports.addItemToFavoriteFolder = async (req, res) => {
+  const userId = req.params.id;
+  const folderName = req.params.folderName;
+  const { type, targetId, title } = req.body;
+
+  if (!type || !targetId) {
+    return res.status(400).json({ error: "type and targetId are required." });
+  }
+
+  try {
+    const user = await User.findOne({ userId });
+    if (!user) return res.status(404).json({ error: "User not found." });
+
+    const folder = user.favoriteFolders.find(f => f.name === folderName);
+    if (!folder) return res.status(404).json({ error: "Folder not found." });
+
+    folder.items.push({ type, targetId, title });
+    await user.save();
+
+    res.json({ message: "Item added.", items: folder.items });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to add item.", details: err.message });
+  }
+};
+
+exports.removeItemFromFavoriteFolder = async (req, res) => {
+  const { id: userId, folderName, itemId } = req.params;
+  try {
+    const user = await User.findOne({ userId });
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    const folder = user.favoriteFolders.find(f => f.name === folderName);
+    if (!folder) return res.status(404).json({ error: "Folder not found" });
+
+    folder.items = folder.items.filter(i => i._id.toString() !== itemId);
+    await user.save();
+
+    res.json({ message: "Item removed.", items: folder.items });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to remove item", details: err.message });
+  }
+};
+
+exports.deleteFavoriteFolder = async (req, res) => {
+  const { id: userId, folderName } = req.params;
+  try {
+    const user = await User.findOne({ userId });
+    if (!user) return res.status(404).json({ error: "User not found" });
+
+    user.favoriteFolders = user.favoriteFolders.filter(f => f.name !== folderName);
+    await user.save();
+
+    res.json({ message: "Folder deleted.", favoriteFolders: user.favoriteFolders });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to delete folder", details: err.message });
   }
 };
