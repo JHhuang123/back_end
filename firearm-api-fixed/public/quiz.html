@@ -9,10 +9,9 @@
     .step { display: none; margin-bottom: 1.5rem; }
     .step.active { display: block; }
     .question-title { font-weight: bold; margin-bottom: 0.5rem; }
-    label, select { display: block; margin: 4px 0; }
-    #next-btn, #submit-btn { margin-top: 1rem; }
-    #results { margin-top: 2rem; }
-    #results img { max-width: 150px; display: block; margin-top: 0.5rem; }
+    label, select { display: block; margin: 6px 0; }
+    button { margin-top: 1rem; padding: 6px 12px; }
+    #results img { max-width: 120px; display: block; margin-top: 4px; }
   </style>
 </head>
 <body>
@@ -20,8 +19,8 @@
   <form id="quiz-form">
     <!-- Step 1 -->
     <div id="step1" class="step">
-      <div class="question-title">Step 1/12  Do you have a weapon in mind?</div>
-      <label><input type="radio" name="haveWeapon" value="yes"/> Yes (Enter product ID)</label>
+      <div class="question-title">1) Do you have a weapon in mind?</div>
+      <label><input type="radio" name="haveWeapon" value="yes"/> Yes (enter product ID)</label>
       <label><input type="radio" name="haveWeapon" value="no"/> No</label>
       <label id="prod-label" style="display:none">
         Enter Product ID: <input type="text" name="productId"/>
@@ -30,9 +29,10 @@
 
     <!-- Step 2 -->
     <div id="step2" class="step">
-      <div class="question-title">Step 2/12  您所在的州是?</div>
+      <div class="question-title">2) 您所在的州是?</div>
       <select name="state" required>
-        <option value="">-- 请选择州 --</option>
+        <option value="">-- Select State --</option>
+        <!-- 列出所有州 -->
         <option>Alabama</option><option>Alaska</option><option>Arizona</option><option>Arkansas</option>
         <option>California</option><option>Colorado</option><option>Connecticut</option><option>Delaware</option>
         <option>Florida</option><option>Georgia</option><option>Hawaii</option><option>Idaho</option>
@@ -51,7 +51,7 @@
 
     <!-- Step 3 -->
     <div id="step3" class="step">
-      <div class="question-title">Step 3/12  您想要的枪械类别?</div>
+      <div class="question-title">3) 您想要的枪械类别?</div>
       <label><input type="radio" name="firearmType" value="handgun"/> 手枪</label>
       <label><input type="radio" name="firearmType" value="rifle"/> 步枪</label>
       <label><input type="radio" name="firearmType" value="shotgun"/> 霰弹枪</label>
@@ -60,35 +60,50 @@
 
     <!-- Step 4 -->
     <div id="step4" class="step">
-      <div class="question-title">Step 4/12  您希望使用哪种口径?</div>
+      <div class="question-title">4) 您希望使用哪种口径?</div>
       <div id="caliber-options"></div>
+    </div>
+
+    <!-- Step 5 -->
+    <div id="step5" class="step">
+      <div class="question-title">5) 您是否有品牌偏好?</div>
+      <div id="brand-options"></div>
     </div>
 
     <!-- Step 6 -->
     <div id="step6" class="step">
-      <div class="question-title">Step 6/12  预算区间?</div>
-      <label><input type="radio" name="budget" value="<=250"/> ≤ $250</label>
+      <div class="question-title">6) 预算区间?</div>
+      <label><input type="radio" name="budget" value="<=250"/> ≤ $250</label>
       <label><input type="radio" name="budget" value="250-400"/> $250–400</label>
       <label><input type="radio" name="budget" value="400-900"/> $400–900</label>
       <label><input type="radio" name="budget" value="900-2000"/> $900–2000</label>
-      <label><input type="radio" name="budget" value=">2000"/> > $2000</label>
+      <label><input type="radio" name="budget" value=">2000"/> > $2000</label>
+    </div>
+
+    <!-- Step 7 -->
+    <div id="step7" class="step">
+      <div class="question-title">7) 重量要求?</div>
+      <div id="weight-options"></div>
+    </div>
+
+    <!-- Step 8 -->
+    <div id="step8" class="step">
+      <div class="question-title">8) 枪管长度?</div>
+      <div id="barrel-options"></div>
+    </div>
+
+    <!-- Step 9 -->
+    <div id="step9" class="step">
+      <div class="question-title">9) 发射机制?</div>
+      <label><input type="radio" name="actionType" value="Striker-Fired"/> Striker-Fired</label>
+      <label><input type="radio" name="actionType" value="Single Action"/> Single Action</label>
+      <label><input type="radio" name="actionType" value="Double Action"/> Double Action</label>
+      <label><input type="radio" name="actionType" value="No preference"/> 无偏好</label>
     </div>
 
     <!-- Step 10 -->
     <div id="step10" class="step">
-      <div class="question-title">Step 10/12  重量要求?</div>
-      <div id="weight-options"></div>
-    </div>
-
-    <!-- Step 11 -->
-    <div id="step11" class="step">
-      <div class="question-title">Step 11/12  枪管长度?</div>
-      <div id="barrel-options"></div>
-    </div>
-
-    <!-- Step 12 -->
-    <div id="step12" class="step">
-      <div class="question-title">Step 12/12  射击经验?</div>
+      <div class="question-title">10) 您的射击经验?</div>
       <label><input type="radio" name="experienceLevel" value="Novice"/> Novice (&lt;100)</label>
       <label><input type="radio" name="experienceLevel" value="Beginner"/> Beginner (100–500)</label>
       <label><input type="radio" name="experienceLevel" value="Intermediate"/> Intermediate (500–1000)</label>
@@ -104,106 +119,111 @@
 
   <script>
     const form = document.getElementById('quiz-form');
-    const steps = ['step1','step2','step3','step4','step6','step10','step11','step12'];
-    let idx = 0;
-    let selectedType = null;
+    const steps = ['step1','step2','step3','step4','step5','step6','step7','step8','step9','step10'];
+    let idx = 0, selectedType = null;
 
     function showStep(i) {
       steps.forEach(id => document.getElementById(id).classList.remove('active'));
       document.getElementById(steps[i]).classList.add('active');
     }
-
-    // 初始化第一步
     showStep(0);
 
-    // Step1: 有武器？ 显示/隐藏 productId
-    document.querySelectorAll('input[name="haveWeapon"]').forEach(radio => {
+    // Step1: 有武器?
+    form.haveWeapon.forEach(radio => {
       radio.addEventListener('change', e => {
-        document.getElementById('prod-label').style.display =
-          e.target.value === 'yes' ? 'block' : 'none';
+        document.getElementById('prod-label').style.display = e.target.value === 'yes' ? 'block' : 'none';
       });
     });
 
-    // 数据选项
-    const CAL = {
-      handgun: ['9mm', '.40 S&W', '.45 ACP', '.380 ACP'],
-      rifle:   ['.22', '5.56', '7.62'],
-      shotgun: ['12 GA', '20 GA', '.410'],
-      sniper:  ['.308', '.300 Win Mag', '.50 BMG']
+    // 数据源
+    const BRANDS = ['Glock','Sig Sauer','Smith & Wesson','Beretta','Taurus','CZ','Heckler & Koch','Ruger','Springfield Armory','No preference'];
+    const CAL   = {
+      handgun:['9mm','.40 S&W','.45 ACP','.380 ACP'],
+      rifle:  ['.22','5.56','7.62'],
+      shotgun:['12 GA','20 GA','.410'],
+      sniper: ['.308','.300 Win Mag','.50 BMG']
     };
     const WEIGHT_OPTS = {
-      handgun:  [['ultra-light','<600 g'],['light','600–800 g'],['balanced','800–1000 g'],['heavy','>1000 g'],['No preference','无偏好']],
-      shotgun:  [['ultra-light','<2.5 kg'],['light','2.5–3.0 kg'],['balanced','3.0–4.0 kg'],['heavy','>4.0 kg'],['No preference','无偏好']],
-      rifle:    [['ultra-light','<3.0 kg'],['light','3.0–4.0 kg'],['balanced','4.0–5.0 kg'],['heavy','>5.0 kg'],['No preference','无偏好']],
-      sniper:   [['ultra-light','<3.0 kg'],['light','3.0–4.0 kg'],['balanced','4.0–5.0 kg'],['heavy','>5.0 kg'],['No preference','无偏好']]
+      handgun:[['ultra-light','<600 g'],['light','600–800 g'],['balanced','800–1000 g'],['heavy','>1000 g'],['No preference','无偏好']],
+      shotgun:[['ultra-light','<2.5 kg'],['light','2.5–3.0 kg'],['balanced','3.0–4.0 kg'],['heavy','>4.0 kg'],['No preference','无偏好']],
+      rifle:  [['ultra-light','<3.0 kg'],['light','3.0–4.0 kg'],['balanced','4.0–5.0 kg'],['heavy','>5.0 kg'],['No preference','无偏好']],
+      sniper: [['ultra-light','<3.0 kg'],['light','3.0–4.0 kg'],['balanced','4.0–5.0 kg'],['heavy','>5.0 kg'],['No preference','无偏好']]
     };
     const BARREL_OPTS = {
-      handgun: [['<3','<3″'],['3-4','3–4″'],['4-5','4–5″'],['>5','>5″'],['No preference','无偏好']],
-      shotgun: [['<18','<18″'],['18-24','18–24″'],['24-28','24–28″'],['>28','>28″'],['No preference','无偏好']],
-      rifle:   [['<16','<16″'],['16-20','16–20″'],['20-24','20–24″'],['>24','>24″'],['No preference','无偏好']],
-      sniper:  [['<20','<20″'],['20-24','20–24″'],['24-28','24–28″'],['>28','>28″'],['No preference','无偏好']]
+      handgun:[['<3','<3″'],['3-4','3–4″'],['4-5','4–5″'],['>5','>5″'],['No preference','无偏好']],
+      shotgun:[['<18','<18″'],['18-24','18–24″'],['24-28','24–28″'],['>28','>28″'],['No preference','无偏好']],
+      rifle:  [['<16','<16″'],['16-20','16–20″'],['20-24','20–24″'],['>24','>24″'],['No preference','无偏好']],
+      sniper: [['<20','<20″'],['20-24','20–24″'],['24-28','24–28″'],['>28','>28″'],['No preference','无偏好']]
     };
 
-    // 渲染函数
-    function renderCalibers() {
-      const cdiv = document.getElementById('caliber-options');
-      cdiv.innerHTML = '';
+    function renderCalibers(){
+      const div = document.getElementById('caliber-options');
+      div.innerHTML = '';
       CAL[selectedType].forEach(o => {
-        cdiv.innerHTML += `<label><input type="radio" name="caliber" value="${o}"/> ${o}</label>`;
+        div.innerHTML += `<label><input type="radio" name="caliber" value="${o}"/> ${o}</label>`;
       });
     }
-    function renderWeights() {
-      const wdiv = document.getElementById('weight-options');
-      wdiv.innerHTML = '';
+    function renderBrands(){
+      const div = document.getElementById('brand-options');
+      div.innerHTML = '';
+      BRANDS.forEach(o => {
+        div.innerHTML += `<label><input type="radio" name="brand" value="${o}"/> ${o}</label>`;
+      });
+    }
+    function renderWeights(){
+      const div = document.getElementById('weight-options');
+      div.innerHTML = '';
       WEIGHT_OPTS[selectedType].forEach(([v,l]) => {
-        wdiv.innerHTML += `<label><input type="radio" name="weightReq" value="${v}"/> ${l}</label>`;
+        div.innerHTML += `<label><input type="radio" name="weightReq" value="${v}"/> ${l}</label>`;
       });
     }
-    function renderBarrels() {
-      const bdiv = document.getElementById('barrel-options');
-      bdiv.innerHTML = '';
+    function renderBarrels(){
+      const div = document.getElementById('barrel-options');
+      div.innerHTML = '';
       BARREL_OPTS[selectedType].forEach(([v,l]) => {
-        bdiv.innerHTML += `<label><input type="radio" name="barrelLength" value="${v}"/> ${l}</label>`;
+        div.innerHTML += `<label><input type="radio" name="barrelLength" value="${v}"/> ${l}</label>`;
       });
     }
 
-    // Step3 选择类型后渲染口径、重量、枪管长度
-    document.querySelectorAll('input[name="firearmType"]').forEach(radio => {
+    // Step3 选枪型后触发渲染
+    form.firearmType.forEach(radio => {
       radio.addEventListener('change', e => {
         selectedType = e.target.value;
+        showStep(3);
         renderCalibers();
+        renderBrands();
         renderWeights();
         renderBarrels();
       });
     });
 
-    // Next 按钮
+    // Next / Submit 按钮
     document.getElementById('next-btn').addEventListener('click', () => {
-      showStep(++idx);
+      idx++;
+      showStep(idx);
       if (idx === steps.length - 1) {
         document.getElementById('next-btn').style.display = 'none';
         document.getElementById('submit-btn').style.display = 'inline-block';
       }
     });
-
-    // Submit -> 调用后端
     document.getElementById('submit-btn').addEventListener('click', async () => {
       const data = {};
-      new FormData(form).forEach((v, k) => data[k] = v);
-      const res = await fetch('/recommendation', {
-        method: 'POST',
-        headers: {'Content-Type':'application/json'},
+      new FormData(form).forEach((v,k)=>data[k]=v);
+      const res  = await fetch('/recommendation', {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
         body: JSON.stringify(data)
       });
       const json = await res.json();
-      const rd = document.getElementById('results');
+      const rd   = document.getElementById('results');
       rd.innerHTML = '<h2>Top 3 Recommendations:</h2>';
       (json.recommendations||[]).forEach(g => {
+        const price = parseFloat(g.price?.['$numberDouble']||g.price||0).toFixed(2);
         rd.innerHTML += `
           <div style="margin-bottom:1rem">
             <strong>${g.name}</strong><br>
-            <img src="${g.img||g.link}" alt=""/><br>
-            Price: $${parseFloat(g.price?.$numberDouble||g.price).toFixed(2)}
+            <img src="${g.img||g.link}" alt="" /><br>
+            Price: \$${price}
           </div>`;
       });
     });
