@@ -7,6 +7,8 @@ const cors = require("cors");
 const app = express();
 app.use(cors());
 app.use(express.json());
+const path = require('path');
+app.use(express.static(path.join(__dirname, 'public')));
 
 // ✅ 连接 MongoDB 数据库（两套）
 const firearmsDb = mongoose.createConnection(process.env.MONGODB_URI_FIREARMS, {
@@ -142,6 +144,7 @@ const userFirearmRoutes = require("./routes/userFirearm");
 const firearmRoutes = require("./routes/firearms");
 const armoryRoutes = require("./routes/armory");
 const noteRoutes = require('./routes/note');
+const recommendationRoutes = require("./routes/recommendation");
 
 app.use("/api/users", userRoutes);
 app.use("/api/user_firearm", userFirearmRoutes);
@@ -149,6 +152,7 @@ app.use("/api/firearms", firearmRoutes);
 app.use('/api/armory', armoryRoutes);
 app.use('/note', noteRoutes);
 app.use("/uploads", express.static("uploads"));
+app.use("/recommendation", recommendationRoutes);
 
 // ✅ JSON 导出接口
 app.get("/export/:collection", async (req, res) => {

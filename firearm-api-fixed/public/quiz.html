@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>🔫 Firearm Recommendation Quiz</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    .step { display: none; margin-bottom: 1.5rem; }
+    .step.active { display: block; }
+    .question-title { font-weight: bold; margin-bottom: 0.5rem; }
+    label, select { display: block; margin: 4px 0; }
+    #next-btn, #submit-btn { margin-top: 1rem; }
+    #results { margin-top: 2rem; }
+    #results img { max-width: 150px; display: block; margin-top: 0.5rem; }
+  </style>
+</head>
+<body>
+  <h1>🔫 Firearm Recommendation Quiz</h1>
+  <form id="quiz-form">
+    <!-- Step 1 -->
+    <div id="step1" class="step">
+      <div class="question-title">Step 1/12  Do you have a weapon in mind?</div>
+      <label><input type="radio" name="haveWeapon" value="yes"/> Yes (Enter product ID)</label>
+      <label><input type="radio" name="haveWeapon" value="no"/> No</label>
+      <label id="prod-label" style="display:none">
+        Enter Product ID: <input type="text" name="productId"/>
+      </label>
+    </div>
+
+    <!-- Step 2 -->
+    <div id="step2" class="step">
+      <div class="question-title">Step 2/12  您所在的州是?</div>
+      <select name="state" required>
+        <option value="">-- 请选择州 --</option>
+        <option>Alabama</option><option>Alaska</option><option>Arizona</option><option>Arkansas</option>
+        <option>California</option><option>Colorado</option><option>Connecticut</option><option>Delaware</option>
+        <option>Florida</option><option>Georgia</option><option>Hawaii</option><option>Idaho</option>
+        <option>Illinois</option><option>Indiana</option><option>Iowa</option><option>Kansas</option>
+        <option>Kentucky</option><option>Louisiana</option><option>Maine</option><option>Maryland</option>
+        <option>Massachusetts</option><option>Michigan</option><option>Minnesota</option><option>Mississippi</option>
+        <option>Missouri</option><option>Montana</option><option>Nebraska</option><option>Nevada</option>
+        <option>New Hampshire</option><option>New Jersey</option><option>New Mexico</option><option>New York</option>
+        <option>North Carolina</option><option>North Dakota</option><option>Ohio</option><option>Oklahoma</option>
+        <option>Oregon</option><option>Pennsylvania</option><option>Rhode Island</option><option>South Carolina</option>
+        <option>South Dakota</option><option>Tennessee</option><option>Texas</option><option>Utah</option>
+        <option>Vermont</option><option>Virginia</option><option>Washington</option><option>West Virginia</option>
+        <option>Wisconsin</option><option>Wyoming</option><option>District of Columbia</option>
+      </select>
+    </div>
+
+    <!-- Step 3 -->
+    <div id="step3" class="step">
+      <div class="question-title">Step 3/12  您想要的枪械类别?</div>
+      <label><input type="radio" name="firearmType" value="handgun"/> 手枪</label>
+      <label><input type="radio" name="firearmType" value="rifle"/> 步枪</label>
+      <label><input type="radio" name="firearmType" value="shotgun"/> 霰弹枪</label>
+      <label><input type="radio" name="firearmType" value="sniper"/> 狙击/精密步枪</label>
+    </div>
+
+    <!-- Step 4 -->
+    <div id="step4" class="step">
+      <div class="question-title">Step 4/12  您希望使用哪种口径?</div>
+      <div id="caliber-options"></div>
+    </div>
+
+    <!-- Step 6 -->
+    <div id="step6" class="step">
+      <div class="question-title">Step 6/12  预算区间?</div>
+      <label><input type="radio" name="budget" value="<=250"/> ≤ $250</label>
+      <label><input type="radio" name="budget" value="250-400"/> $250–400</label>
+      <label><input type="radio" name="budget" value="400-900"/> $400–900</label>
+      <label><input type="radio" name="budget" value="900-2000"/> $900–2000</label>
+      <label><input type="radio" name="budget" value=">2000"/> > $2000</label>
+    </div>
+
+    <!-- Step 10 -->
+    <div id="step10" class="step">
+      <div class="question-title">Step 10/12  重量要求?</div>
+      <div id="weight-options"></div>
+    </div>
+
+    <!-- Step 11 -->
+    <div id="step11" class="step">
+      <div class="question-title">Step 11/12  枪管长度?</div>
+      <div id="barrel-options"></div>
+    </div>
+
+    <!-- Step 12 -->
+    <div id="step12" class="step">
+      <div class="question-title">Step 12/12  射击经验?</div>
+      <label><input type="radio" name="experienceLevel" value="Novice"/> Novice (&lt;100)</label>
+      <label><input type="radio" name="experienceLevel" value="Beginner"/> Beginner (100–500)</label>
+      <label><input type="radio" name="experienceLevel" value="Intermediate"/> Intermediate (500–1000)</label>
+      <label><input type="radio" name="experienceLevel" value="Advanced"/> Advanced (1000–5000)</label>
+      <label><input type="radio" name="experienceLevel" value="Expert"/> Expert (&gt;5000)</label>
+    </div>
+
+    <button type="button" id="next-btn">Next</button>
+    <button type="button" id="submit-btn" style="display:none">Submit</button>
+  </form>
+
+  <div id="results"></div>
+
+  <script>
+    const form = document.getElementById('quiz-form');
+    const steps = ['step1','step2','step3','step4','step6','step10','step11','step12'];
+    let idx = 0;
+    let selectedType = null;
+
+    function showStep(i) {
+      steps.forEach(id => document.getElementById(id).classList.remove('active'));
+      document.getElementById(steps[i]).classList.add('active');
+    }
+
+    // 初始化第一步
+    showStep(0);
+
+    // Step1: 有武器？ 显示/隐藏 productId
+    document.querySelectorAll('input[name="haveWeapon"]').forEach(radio => {
+      radio.addEventListener('change', e => {
+        document.getElementById('prod-label').style.display =
+          e.target.value === 'yes' ? 'block' : 'none';
+      });
+    });
+
+    // 数据选项
+    const CAL = {
+      handgun: ['9mm', '.40 S&W', '.45 ACP', '.380 ACP'],
+      rifle:   ['.22', '5.56', '7.62'],
+      shotgun: ['12 GA', '20 GA', '.410'],
+      sniper:  ['.308', '.300 Win Mag', '.50 BMG']
+    };
+    const WEIGHT_OPTS = {
+      handgun:  [['ultra-light','<600 g'],['light','600–800 g'],['balanced','800–1000 g'],['heavy','>1000 g'],['No preference','无偏好']],
+      shotgun:  [['ultra-light','<2.5 kg'],['light','2.5–3.0 kg'],['balanced','3.0–4.0 kg'],['heavy','>4.0 kg'],['No preference','无偏好']],
+      rifle:    [['ultra-light','<3.0 kg'],['light','3.0–4.0 kg'],['balanced','4.0–5.0 kg'],['heavy','>5.0 kg'],['No preference','无偏好']],
+      sniper:   [['ultra-light','<3.0 kg'],['light','3.0–4.0 kg'],['balanced','4.0–5.0 kg'],['heavy','>5.0 kg'],['No preference','无偏好']]
+    };
+    const BARREL_OPTS = {
+      handgun: [['<3','<3″'],['3-4','3–4″'],['4-5','4–5″'],['>5','>5″'],['No preference','无偏好']],
+      shotgun: [['<18','<18″'],['18-24','18–24″'],['24-28','24–28″'],['>28','>28″'],['No preference','无偏好']],
+      rifle:   [['<16','<16″'],['16-20','16–20″'],['20-24','20–24″'],['>24','>24″'],['No preference','无偏好']],
+      sniper:  [['<20','<20″'],['20-24','20–24″'],['24-28','24–28″'],['>28','>28″'],['No preference','无偏好']]
+    };
+
+    // 渲染函数
+    function renderCalibers() {
+      const cdiv = document.getElementById('caliber-options');
+      cdiv.innerHTML = '';
+      CAL[selectedType].forEach(o => {
+        cdiv.innerHTML += `<label><input type="radio" name="caliber" value="${o}"/> ${o}</label>`;
+      });
+    }
+    function renderWeights() {
+      const wdiv = document.getElementById('weight-options');
+      wdiv.innerHTML = '';
+      WEIGHT_OPTS[selectedType].forEach(([v,l]) => {
+        wdiv.innerHTML += `<label><input type="radio" name="weightReq" value="${v}"/> ${l}</label>`;
+      });
+    }
+    function renderBarrels() {
+      const bdiv = document.getElementById('barrel-options');
+      bdiv.innerHTML = '';
+      BARREL_OPTS[selectedType].forEach(([v,l]) => {
+        bdiv.innerHTML += `<label><input type="radio" name="barrelLength" value="${v}"/> ${l}</label>`;
+      });
+    }
+
+    // Step3 选择类型后渲染口径、重量、枪管长度
+    document.querySelectorAll('input[name="firearmType"]').forEach(radio => {
+      radio.addEventListener('change', e => {
+        selectedType = e.target.value;
+        renderCalibers();
+        renderWeights();
+        renderBarrels();
+      });
+    });
+
+    // Next 按钮
+    document.getElementById('next-btn').addEventListener('click', () => {
+      showStep(++idx);
+      if (idx === steps.length - 1) {
+        document.getElementById('next-btn').style.display = 'none';
+        document.getElementById('submit-btn').style.display = 'inline-block';
+      }
+    });
+
+    // Submit -> 调用后端
+    document.getElementById('submit-btn').addEventListener('click', async () => {
+      const data = {};
+      new FormData(form).forEach((v, k) => data[k] = v);
+      const res = await fetch('/recommendation', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(data)
+      });
+      const json = await res.json();
+      const rd = document.getElementById('results');
+      rd.innerHTML = '<h2>Top 3 Recommendations:</h2>';
+      (json.recommendations||[]).forEach(g => {
+        rd.innerHTML += `
+          <div style="margin-bottom:1rem">
+            <strong>${g.name}</strong><br>
+            <img src="${g.img||g.link}" alt=""/><br>
+            Price: $${parseFloat(g.price?.$numberDouble||g.price).toFixed(2)}
+          </div>`;
+      });
+    });
+  </script>
+</body>
+</html>
