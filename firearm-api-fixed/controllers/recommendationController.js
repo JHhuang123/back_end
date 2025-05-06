@@ -82,8 +82,12 @@ exports.recommendGuns = async (req, res) => {
     });
 
     // 5) 品牌过滤
-    if (b.brand && b.brand !== "No preference") {
-      items = items.filter(i => i.make === b.brand);
+    if (b.brand && b.brand !== 'No preference') {
+      const wanted = b.brand.trim().toLowerCase();
+      items = items.filter(i => {
+        return typeof i.make === 'string' &&
+               i.make.trim().toLowerCase().includes(wanted);
+      });
     }
 
     // 6) 口径过滤
